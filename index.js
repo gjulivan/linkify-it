@@ -428,7 +428,7 @@ LinkifyIt.prototype.set = function set(options) {
  *
  * Searches linkifiable pattern and returns `true` on success or `false` on fail.
  **/
-LinkifyIt.prototype.test = function test(text) {
+LinkifyIt.prototype.test = function test(text, ori_text) {
   // Reset scan cache
   this.__text_cache__ = text;
   this.__index__      = -1;
@@ -442,7 +442,7 @@ LinkifyIt.prototype.test = function test(text) {
     re = this.re.schema_search;
     re.lastIndex = 0;
     while ((m = re.exec(text)) !== null) {
-      len = this.testSchemaAt(text, m[2], re.lastIndex);
+      len = this.testSchemaAt(text, m[2], re.lastIndex, ori_text);
       if (len) {
         this.__schema__     = m[2];
         this.__index__      = m.index + m[1].length;
@@ -505,7 +505,7 @@ LinkifyIt.prototype.test = function test(text) {
  * link NOT exists.
  **/
 LinkifyIt.prototype.pretest = function pretest(text) {
-  return this.re.pretest.test(text);
+  return this.re.pretest.test(text, ori_text);
 };
 
 
@@ -518,12 +518,12 @@ LinkifyIt.prototype.pretest = function pretest(text) {
  * Similar to [[LinkifyIt#test]] but checks only specific protocol tail exactly
  * at given position. Returns length of found pattern (0 on fail).
  **/
-LinkifyIt.prototype.testSchemaAt = function testSchemaAt(text, schema, pos) {
+LinkifyIt.prototype.testSchemaAt = function testSchemaAt(text, schema, pos, ori_text) {
   // If not supported schema check requested - terminate
   if (!this.__compiled__[schema.toLowerCase()]) {
     return 0;
   }
-  return this.__compiled__[schema.toLowerCase()].validate(text, pos, this);
+  return this.__compiled__[schema.toLowerCase()].validate(text, pos, this, ori_text);
 };
 
 
@@ -545,7 +545,7 @@ LinkifyIt.prototype.testSchemaAt = function testSchemaAt(text, schema, pos) {
  **/
 LinkifyIt.prototype.match = function match(text) {
   var shift = 0, result = [];
-
+  var ori_text = text;
   // Try to take previous element from cache, if .test() called before
   if (this.__index__ >= 0 && this.__text_cache__ === text) {
     result.push(createMatch(this, shift));
@@ -556,7 +556,7 @@ LinkifyIt.prototype.match = function match(text) {
   var tail = shift ? text.slice(shift) : text;
 
   // Scan string until end reached
-  while (this.test(tail)) {
+  while (this.test(tail, ori_text)) {
     result.push(createMatch(this, shift));
 
     tail = tail.slice(this.__last_index__);
